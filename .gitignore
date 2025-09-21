@@ -1,0 +1,44 @@
+# Node / Vite / React
+node_modules/
+.dist/
+dist/
+.build/
+build/
+.vite/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Env
+.env
+.env.*
+
+# Editor/OS
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+
+# Coverage
+coverage/
+
+# .NET
+**/bin/
+**/obj/
+*.user
+*.rsuser
+*.suo
+*.userosscache
+*.sln.docstates
+
+# ASP.NET logs
+**/logs/
+
+# Generated files
+*.generated.*
+
+# Misc
+*.swp
+*.tmp
