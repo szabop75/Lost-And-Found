@@ -140,6 +140,16 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
                 .WithMany()
                 .HasForeignKey(d => d.BusLineId)
                 .OnDelete(DeleteBehavior.SetNull);
+
+            e.HasOne(d => d.Driver)
+                .WithMany()
+                .HasForeignKey(d => d.DriverId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            e.HasOne(d => d.StorageLocation)
+                .WithMany()
+                .HasForeignKey(d => d.StorageLocationId)
+                .OnDelete(DeleteBehavior.SetNull);
         });
 
         builder.Entity<BusLine>(e =>

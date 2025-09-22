@@ -3,6 +3,7 @@ using System;
 using LostAndFound.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace LostAndFound.Infrastructure.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250922083134_AddDepositDriver")]
+    partial class AddDepositDriver
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -298,20 +301,11 @@ namespace LostAndFound.Infrastructure.Migrations
                     b.Property<string>("FinderPhone")
                         .HasColumnType("text");
 
-                    b.Property<DateTime?>("FoundAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("FoundLocation")
-                        .HasColumnType("text");
-
                     b.Property<string>("LicensePlate")
                         .HasColumnType("text");
 
                     b.Property<int>("Serial")
                         .HasColumnType("integer");
-
-                    b.Property<Guid?>("StorageLocationId")
-                        .HasColumnType("uuid");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
@@ -324,8 +318,6 @@ namespace LostAndFound.Infrastructure.Migrations
                     b.HasIndex("BusLineId");
 
                     b.HasIndex("DriverId");
-
-                    b.HasIndex("StorageLocationId");
 
                     b.HasIndex("Year", "Serial")
                         .IsUnique();
@@ -446,6 +438,27 @@ namespace LostAndFound.Infrastructure.Migrations
 
                     b.Property<string>("Details")
                         .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("FinderAddress")
+                        .HasColumnType("text");
+
+                    b.Property<string>("FinderEmail")
+                        .HasColumnType("text");
+
+                    b.Property<string>("FinderIdNumber")
+                        .HasColumnType("text");
+
+                    b.Property<string>("FinderName")
+                        .HasColumnType("text");
+
+                    b.Property<string>("FinderPhone")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime?>("FoundAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("FoundLocation")
                         .HasColumnType("text");
 
                     b.Property<string>("OtherCategoryText")
@@ -917,16 +930,9 @@ namespace LostAndFound.Infrastructure.Migrations
                         .HasForeignKey("DriverId")
                         .OnDelete(DeleteBehavior.SetNull);
 
-                    b.HasOne("LostAndFound.Domain.Entities.StorageLocation", "StorageLocation")
-                        .WithMany()
-                        .HasForeignKey("StorageLocationId")
-                        .OnDelete(DeleteBehavior.SetNull);
-
                     b.Navigation("BusLine");
 
                     b.Navigation("Driver");
-
-                    b.Navigation("StorageLocation");
                 });
 
             modelBuilder.Entity("LostAndFound.Domain.Entities.DepositCashDenomination", b =>

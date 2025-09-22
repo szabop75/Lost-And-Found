@@ -35,6 +35,9 @@ public class ItemListResponse
     public DateTime? FoundAt { get; set; }
     public string? Details { get; set; }
     public string? FoundLocation { get; set; }
+    public string? FinderName { get; set; }
+    public string? LicensePlate { get; set; }
+    public string? BusLineName { get; set; }
     public string? DepositNumber { get; set; }
     public int? DepositSubIndex { get; set; }
 }

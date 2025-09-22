@@ -32,7 +32,11 @@ public class ItemsController : ControllerBase
         [FromQuery] int pageSize = 20,
         [FromQuery] bool excludeClaimed = false)
     {
-        var query = _db.FoundItems.AsNoTracking().AsQueryable();
+        var query = _db.FoundItems
+            .AsNoTracking()
+            .Include(i => i.Deposit)
+            .ThenInclude(d => d!.BusLine)
+            .AsQueryable();
 
         if (!string.IsNullOrWhiteSpace(status) && Enum.TryParse<ItemStatus>(status, true, out var st))
         {
@@ -48,7 +52,7 @@ public class ItemsController : ControllerBase
             // Prefer case-insensitive search via ILIKE when supported (e.g., PostgreSQL)
             query = query.Where(i =>
                 EF.Functions.ILike(i.Details, pattern) ||
-                (i.FoundLocation != null && EF.Functions.ILike(i.FoundLocation, pattern))
+                (i.Deposit != null && i.Deposit.FoundLocation != null && EF.Functions.ILike(i.Deposit.FoundLocation, pattern))
             );
         }
 
@@ -67,12 +71,12 @@ public class ItemsController : ControllerBase
             ("category", true)  => query.OrderByDescending(i => i.Category),
             ("status", false) => query.OrderBy(i => i.Status),
             ("status", true)  => query.OrderByDescending(i => i.Status),
-            ("foundlocation", false) => query.OrderBy(i => i.FoundLocation ?? string.Empty),
-            ("foundlocation", true)  => query.OrderByDescending(i => i.FoundLocation ?? string.Empty),
+            ("foundlocation", false) => query.OrderBy(i => (i.Deposit != null ? i.Deposit.FoundLocation : null) ?? string.Empty),
+            ("foundlocation", true)  => query.OrderByDescending(i => (i.Deposit != null ? i.Deposit.FoundLocation : null) ?? string.Empty),
             ("details", false) => query.OrderBy(i => i.Details),
             ("details", true)  => query.OrderByDescending(i => i.Details),
-            ("foundat", false) => query.OrderBy(i => i.FoundAt),
-            ("foundat", true)  => query.OrderByDescending(i => i.FoundAt),
+            ("foundat", false) => query.OrderBy(i => i.Deposit != null ? i.Deposit.FoundAt : null),
+            ("foundat", true)  => query.OrderByDescending(i => i.Deposit != null ? i.Deposit.FoundAt : null),
             ("createdat", false) => query.OrderBy(i => i.CreatedAt),
             _ => query.OrderByDescending(i => i.CreatedAt)
         };
@@ -89,9 +93,12 @@ public class ItemsController : ControllerBase
                 OtherCategoryText = i.OtherCategoryText,
                 Status = i.Status.ToString(),
                 CreatedAt = i.CreatedAt,
-                FoundAt = i.FoundAt,
+                FoundAt = i.Deposit != null ? i.Deposit.FoundAt : null,
                 Details = i.Details,
-                FoundLocation = i.FoundLocation,
+                FoundLocation = i.Deposit != null ? i.Deposit.FoundLocation : null,
+                FinderName = i.Deposit != null ? i.Deposit.FinderName : null,
+                LicensePlate = i.Deposit != null ? i.Deposit.LicensePlate : null,
+                BusLineName = i.Deposit != null && i.Deposit.BusLine != null ? i.Deposit.BusLine.Name : null,
                 DepositNumber = i.Deposit != null ? i.Deposit.DepositNumber : null,
                 DepositSubIndex = i.DepositSubIndex
             })
@@ -117,13 +124,6 @@ public class ItemsController : ControllerBase
             Category = request.Category,
             OtherCategoryText = request.OtherCategoryText,
             Details = request.Details,
-            FoundLocation = request.FoundLocation,
-            FoundAt = request.FoundAt,
-            FinderName = request.FinderName,
-            FinderAddress = request.FinderAddress,
-            FinderEmail = request.FinderEmail,
-            FinderPhone = request.FinderPhone,
-            FinderIdNumber = request.FinderIdNumber,
             Status = ItemStatus.Received,
             CurrentCustodianUserId = User?.Identity?.Name // optional, can be null
         };

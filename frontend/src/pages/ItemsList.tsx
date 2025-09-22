@@ -44,6 +44,9 @@ type ItemListResponse = {
   details?: string;
   depositNumber?: string | null;
   depositSubIndex?: number | null;
+  finderName?: string | null;
+  licensePlate?: string | null;
+  busLineName?: string | null;
 };
 
 type ItemListResult = {
@@ -247,6 +250,9 @@ export default function ItemsList() {
                   Leírás
                 </TableSortLabel>
               </TableCell>
+              <TableCell>Megtaláló neve</TableCell>
+              <TableCell>Rendszám</TableCell>
+              <TableCell>Vonal / irány</TableCell>
               <TableCell sortDirection={orderBy === 'foundLocation' ? order : false}>
                 <TableSortLabel
                   active={orderBy === 'foundLocation'}
@@ -294,6 +300,9 @@ export default function ItemsList() {
                       {item.details ?? ''}
                     </Typography>
                   </TableCell>
+                  <TableCell>{item.finderName ?? ''}</TableCell>
+                  <TableCell>{item.licensePlate ?? ''}</TableCell>
+                  <TableCell>{item.busLineName ?? ''}</TableCell>
                   <TableCell>
                     {item.foundLocation ?? ''}
                   </TableCell>

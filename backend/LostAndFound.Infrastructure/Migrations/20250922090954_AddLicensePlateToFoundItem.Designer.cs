@@ -3,6 +3,7 @@ using System;
 using LostAndFound.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace LostAndFound.Infrastructure.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250922090954_AddLicensePlateToFoundItem")]
+    partial class AddLicensePlateToFoundItem
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -298,12 +301,6 @@ namespace LostAndFound.Infrastructure.Migrations
                     b.Property<string>("FinderPhone")
                         .HasColumnType("text");
 
-                    b.Property<DateTime?>("FoundAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("FoundLocation")
-                        .HasColumnType("text");
-
                     b.Property<string>("LicensePlate")
                         .HasColumnType("text");
 
@@ -446,6 +443,30 @@ namespace LostAndFound.Infrastructure.Migrations
 
                     b.Property<string>("Details")
                         .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("FinderAddress")
+                        .HasColumnType("text");
+
+                    b.Property<string>("FinderEmail")
+                        .HasColumnType("text");
+
+                    b.Property<string>("FinderIdNumber")
+                        .HasColumnType("text");
+
+                    b.Property<string>("FinderName")
+                        .HasColumnType("text");
+
+                    b.Property<string>("FinderPhone")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime?>("FoundAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("FoundLocation")
+                        .HasColumnType("text");
+
+                    b.Property<string>("LicensePlate")
                         .HasColumnType("text");
 
                     b.Property<string>("OtherCategoryText")

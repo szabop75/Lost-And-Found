@@ -52,6 +52,8 @@ public class DepositsController : ControllerBase
         DateTime? FoundAt,
         string? LicensePlate,
         Guid? BusLineId,
+        Guid? DriverId,
+        Guid? StorageLocationId,
         List<CreateDepositItemRequest> Items,
         CreateDepositCashRequest? Cash
     );
@@ -85,8 +87,12 @@ public class DepositsController : ControllerBase
                 FinderEmail = req.FinderEmail,
                 FinderPhone = req.FinderPhone,
                 FinderIdNumber = req.FinderIdNumber,
+                FoundLocation = req.FoundLocation,
+                FoundAt = req.FoundAt,
                 LicensePlate = string.IsNullOrWhiteSpace(req.LicensePlate) ? null : req.LicensePlate!.Trim(),
                 BusLineId = req.BusLineId,
+                DriverId = req.DriverId,
+                StorageLocationId = req.StorageLocationId,
             };
 
             if (req.Cash is not null)
@@ -117,8 +123,6 @@ public class DepositsController : ControllerBase
                     Category = it.Category,
                     OtherCategoryText = it.OtherCategoryText,
                     Details = it.Details,
-                    FoundLocation = req.FoundLocation,
-                    FoundAt = req.FoundAt,
                     Status = ItemStatus.Received,
                     CurrentCustodianUserId = User?.Identity?.Name,
                     Deposit = deposit,

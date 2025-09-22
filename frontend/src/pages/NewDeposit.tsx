@@ -48,6 +48,10 @@ export default function NewDeposit() {
   const [drivers, setDrivers] = useState<DriverRef[]>([]);
   const [driverId, setDriverId] = useState('');
   const [nameAutoFilled, setNameAutoFilled] = useState(false);
+  // New: storage locations for deposit location selection
+  type StorageLocationRef = { id: string; name: string };
+  const [storageLocations, setStorageLocations] = useState<StorageLocationRef[]>([]);
+  const [storageLocationId, setStorageLocationId] = useState('');
   type VehicleRef = { id: string; licensePlate: string; active: boolean };
   const [vehicles, setVehicles] = useState<VehicleRef[]>([]);
   const [vehicleId, setVehicleId] = useState('');
@@ -58,6 +62,9 @@ export default function NewDeposit() {
   ]);
 
   const [error, setError] = useState<string | null>(null);
+  const [foundAtError, setFoundAtError] = useState(false);
+  const [storageLocationError, setStorageLocationError] = useState(false);
+  const [contextError, setContextError] = useState(false); // rendszám / vonal / megtalálás hely közül legalább egy
   const [submitting, setSubmitting] = useState(false);
 
   // Currencies reference
@@ -108,6 +115,18 @@ export default function NewDeposit() {
         setDrivers(res.data);
       } catch {
         // ignore load error (endpoint might be admin-only)
+      }
+    })();
+  }, []);
+
+  // Load storage locations for selection
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await api.get<StorageLocationRef[]>('/api/storage-locations');
+        setStorageLocations(res.data);
+      } catch {
+        // ignore load error
       }
     })();
   }, []);
@@ -202,7 +221,19 @@ export default function NewDeposit() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
-    if (!finderName || finderName.trim().length === 0) { setError('A Név mező kötelező.'); return; }
+    setFoundAtError(false);
+    setStorageLocationError(false);
+    setContextError(false);
+    // Required: found date
+    if (!foundAt) { setError('A Megtalálás dátuma kötelező.'); setFoundAtError(true); return; }
+    // Required: storage location
+    if (!storageLocationId) { setError('A Tárolási hely kötelező.'); setStorageLocationError(true); return; }
+    // At least one: licensePlate OR line OR foundLocation
+    if (!(licensePlate || lineId || (foundLocation && foundLocation.trim().length > 0))) {
+      setError('A Rendszám, Vonal/irány vagy Megtalálás hely mezők közül legalább egyet ki kell tölteni.');
+      setContextError(true);
+      return;
+    }
     if (items.length === 0) { setError('Legalább egy tárgy szükséges.'); return; }
     for (const it of items) {
       if (!it.details) { setError('Minden tételnél kötelező a leírás.'); return; }
@@ -219,6 +250,8 @@ export default function NewDeposit() {
         foundAt: foundAt ? new Date(Number(foundAt.split('-')[0]), Number(foundAt.split('-')[1]) - 1, Number(foundAt.split('-')[2])).toISOString() : null,
         licensePlate: licensePlate || null,
         busLineId: lineId || null,
+        driverId: driverId || null,
+        storageLocationId: storageLocationId || null,
         items: items.map(it => {
           const base: any = {
             category: it.category,
@@ -314,20 +347,21 @@ export default function NewDeposit() {
 
             {/* New row: two sibling children in parent grid */}
             <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 2fr' }, gap: 2 }}>
-              <FormControl variant="outlined" size="small" fullWidth>
+              <FormControl variant="outlined" size="small" fullWidth error={contextError}>
                 <InputLabel id="vehicle-label" shrink>Rendszám</InputLabel>
                 <Select
                   size="small"
                   labelId="vehicle-label"
                   id="vehicle-select"
                   label="Rendszám"
-                  input={<OutlinedInput notched label="Rendszám" />}
                   value={vehicleId}
+                  input={<OutlinedInput notched label="Rendszám" />}
                   onChange={(e) => {
                     const vid = e.target.value as string;
                     setVehicleId(vid);
                     const v = vehicles.find(vv => vv.id === vid);
                     setLicensePlate(v?.licensePlate || '');
+                    setContextError(false);
                   }}
                 >
                   {vehicles.map(v => (
@@ -335,16 +369,16 @@ export default function NewDeposit() {
                   ))}
                 </Select>
               </FormControl>
-              <FormControl variant="outlined" size="small" fullWidth>
+              <FormControl variant="outlined" size="small" fullWidth error={contextError}>
                 <InputLabel id="line-label" shrink>Vonal / irány</InputLabel>
                 <Select
                   size="small"
                   labelId="line-label"
                   id="line-select"
                   label="Vonal / irány"
-                  input={<OutlinedInput notched label="Vonal / irány" />}
                   value={lineId}
-                  onChange={(e) => setLineId(e.target.value as string)}
+                  input={<OutlinedInput notched label="Vonal / irány" />}
+                  onChange={(e) => { setLineId(e.target.value as string); setContextError(false); }}
                 >
                   {lines.map(l => (
                     <MenuItem key={l.id} value={l.id}>{l.name}</MenuItem>
@@ -352,20 +386,37 @@ export default function NewDeposit() {
                 </Select>
               </FormControl>
             </Box>
-            <TextField size="small" fullWidth label="Megtalálás helyszíne" value={foundLocation} onChange={e => setFoundLocation(e.target.value)} InputLabelProps={{ shrink: true }} />
+            <TextField size="small" fullWidth label="Megtalálás helyszíne" value={foundLocation} onChange={e => { setFoundLocation(e.target.value); setContextError(false); }} InputLabelProps={{ shrink: true }} error={contextError} />
 
-            {/* Date field aligned to Rendszám width */}
+            {/* Date (left, 1fr) + Tárolási hely (right, 2fr) matching the row above proportions */}
             <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 2fr' }, gap: 2 }}>
               <TextField
                 size="small"
                 label="Megtalálás dátuma"
                 type="date"
                 value={foundAt}
-                onChange={e => { setFoundAt(e.target.value); foundAtRef.current?.blur(); }}
+                onChange={e => { setFoundAt(e.target.value); setFoundAtError(false); foundAtRef.current?.blur(); }}
                 InputLabelProps={{ shrink: true }}
                 inputRef={foundAtRef}
+                required
+                error={foundAtError}
               />
-              <Box />
+              <FormControl variant="outlined" size="small" fullWidth error={storageLocationError}>
+                <InputLabel id="storage-location-label" shrink>Tárolási hely</InputLabel>
+                <Select
+                  size="small"
+                  labelId="storage-location-label"
+                  id="storage-location-select"
+                  label="Tárolási hely"
+                  value={storageLocationId}
+                  input={<OutlinedInput notched label="Tárolási hely" />}
+                  onChange={(e) => { setStorageLocationId(e.target.value as string); setStorageLocationError(false); }}
+                >
+                  {storageLocations.map(sl => (
+                    <MenuItem key={sl.id} value={sl.id}>{sl.name}</MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
             </Box>
           </Box>
 

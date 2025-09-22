@@ -82,6 +82,7 @@ public class PdfService
     {
         var item = await _db.FoundItems
             .Include(i => i.OwnerClaims)
+            .Include(i => i.Deposit)
             .FirstOrDefaultAsync(i => i.Id == id);
         if (item == null) return null;
 
@@ -93,8 +94,8 @@ public class PdfService
             {
                 col.Item().Text("Tárgy adatai").Bold();
                 col.Item().Text($"Kategória: {it.Category}{(it.Category == "Egyéb" && !string.IsNullOrWhiteSpace(it.OtherCategoryText) ? " - " + it.OtherCategoryText : string.Empty)}");
-                col.Item().Text($"Megtalálás helye: {it.FoundLocation ?? "-"}");
-                col.Item().Text($"Megtalálás ideje: {(it.FoundAt.HasValue ? it.FoundAt.Value.ToString("yyyy.MM.dd. HH:mm") : "-")}");
+                col.Item().Text($"Megtalálás helye: {it.Deposit?.FoundLocation ?? "-"}");
+                col.Item().Text($"Megtalálás ideje: {(it.Deposit?.FoundAt.HasValue == true ? it.Deposit!.FoundAt!.Value.ToString("yyyy.MM.dd. HH:mm") : "-")}");
                 col.Item().Text($"Leírás: {it.Details}");
 
                 col.Item().PaddingVertical(10).LineHorizontal(1);
@@ -126,6 +127,7 @@ public class PdfService
     {
         var item = await _db.FoundItems
             .Include(i => i.CustodyLogs)
+            .Include(i => i.Deposit)
             .FirstOrDefaultAsync(i => i.Id == id);
         if (item == null) return null;
 
@@ -139,8 +141,8 @@ public class PdfService
             {
                 col.Item().Text("Tárgy adatai").Bold();
                 col.Item().Text($"Kategória: {it.Category}{(it.Category == "Egyéb" && !string.IsNullOrWhiteSpace(it.OtherCategoryText) ? " - " + it.OtherCategoryText : string.Empty)}");
-                col.Item().Text($"Megtalálás helye: {it.FoundLocation ?? "-"}");
-                col.Item().Text($"Megtalálás ideje: {(it.FoundAt.HasValue ? it.FoundAt.Value.ToString("yyyy.MM.dd. HH:mm") : "-")}");
+                col.Item().Text($"Megtalálás helye: {it.Deposit?.FoundLocation ?? "-"}");
+                col.Item().Text($"Megtalálás ideje: {(it.Deposit?.FoundAt.HasValue == true ? it.Deposit!.FoundAt!.Value.ToString("yyyy.MM.dd. HH:mm") : "-")}");
                 col.Item().Text($"Leírás: {it.Details}");
 
                 col.Item().PaddingVertical(10).LineHorizontal(1);
@@ -172,6 +174,7 @@ public class PdfService
     {
         var item = await _db.FoundItems
             .Include(i => i.CustodyLogs)
+            .Include(i => i.Deposit)
             .FirstOrDefaultAsync(i => i.Id == id);
         if (item == null) return null;
 
@@ -185,8 +188,8 @@ public class PdfService
             {
                 col.Item().Text("Tárgy adatai").Bold();
                 col.Item().Text($"Kategória: {it.Category}{(it.Category == "Egyéb" && !string.IsNullOrWhiteSpace(it.OtherCategoryText) ? " - " + it.OtherCategoryText : string.Empty)}");
-                col.Item().Text($"Megtalálás helye: {it.FoundLocation ?? "-"}");
-                col.Item().Text($"Megtalálás ideje: {(it.FoundAt.HasValue ? it.FoundAt.Value.ToString("yyyy.MM.dd. HH:mm") : "-")}");
+                col.Item().Text($"Megtalálás helye: {it.Deposit?.FoundLocation ?? "-"}");
+                col.Item().Text($"Megtalálás ideje: {(it.Deposit?.FoundAt.HasValue == true ? it.Deposit!.FoundAt!.Value.ToString("yyyy.MM.dd. HH:mm") : "-")}");
                 col.Item().Text($"Leírás: {it.Details}");
 
                 col.Item().PaddingVertical(10).LineHorizontal(1);
