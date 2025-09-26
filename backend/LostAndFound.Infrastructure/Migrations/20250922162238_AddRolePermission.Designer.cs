@@ -3,6 +3,7 @@ using System;
 using LostAndFound.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace LostAndFound.Infrastructure.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250922162238_AddRolePermission")]
+    partial class AddRolePermission
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -331,50 +334,6 @@ namespace LostAndFound.Infrastructure.Migrations
                         .IsUnique();
 
                     b.ToTable("Deposits");
-                });
-
-            modelBuilder.Entity("LostAndFound.Domain.Entities.DepositDocument", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<byte[]>("Bytes")
-                        .IsRequired()
-                        .HasColumnType("bytea");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid>("DepositId")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("FileName")
-                        .IsRequired()
-                        .HasMaxLength(256)
-                        .HasColumnType("character varying(256)");
-
-                    b.Property<string>("MimeType")
-                        .IsRequired()
-                        .HasMaxLength(128)
-                        .HasColumnType("character varying(128)");
-
-                    b.Property<long>("Size")
-                        .HasColumnType("bigint");
-
-                    b.Property<string>("Type")
-                        .HasColumnType("text");
-
-                    b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("Type");
-
-                    b.HasIndex("DepositId", "CreatedAt");
-
-                    b.ToTable("DepositDocuments");
                 });
 
             modelBuilder.Entity("LostAndFound.Domain.Entities.Driver", b =>
@@ -958,17 +917,6 @@ namespace LostAndFound.Infrastructure.Migrations
                     b.Navigation("Driver");
 
                     b.Navigation("StorageLocation");
-                });
-
-            modelBuilder.Entity("LostAndFound.Domain.Entities.DepositDocument", b =>
-                {
-                    b.HasOne("LostAndFound.Domain.Entities.Deposit", "Deposit")
-                        .WithMany()
-                        .HasForeignKey("DepositId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Deposit");
                 });
 
             modelBuilder.Entity("LostAndFound.Domain.Entities.FoundItem", b =>

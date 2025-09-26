@@ -3,6 +3,7 @@ using System;
 using LostAndFound.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace LostAndFound.Infrastructure.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250922084235_AddDepositStorageLocation")]
+    partial class AddDepositStorageLocation
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -298,12 +301,6 @@ namespace LostAndFound.Infrastructure.Migrations
                     b.Property<string>("FinderPhone")
                         .HasColumnType("text");
 
-                    b.Property<DateTime?>("FoundAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("FoundLocation")
-                        .HasColumnType("text");
-
                     b.Property<string>("LicensePlate")
                         .HasColumnType("text");
 
@@ -333,15 +330,29 @@ namespace LostAndFound.Infrastructure.Migrations
                     b.ToTable("Deposits");
                 });
 
-            modelBuilder.Entity("LostAndFound.Domain.Entities.DepositDocument", b =>
+            modelBuilder.Entity("LostAndFound.Domain.Entities.DepositCashDenomination", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
-                    b.Property<byte[]>("Bytes")
-                        .IsRequired()
-                        .HasColumnType("bytea");
+                    b.Property<int>("Coin10")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("Coin100")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("Coin20")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("Coin200")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("Coin5")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("Coin50")
+                        .HasColumnType("integer");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
@@ -349,32 +360,33 @@ namespace LostAndFound.Infrastructure.Migrations
                     b.Property<Guid>("DepositId")
                         .HasColumnType("uuid");
 
-                    b.Property<string>("FileName")
-                        .IsRequired()
-                        .HasMaxLength(256)
-                        .HasColumnType("character varying(256)");
+                    b.Property<int>("Note1000")
+                        .HasColumnType("integer");
 
-                    b.Property<string>("MimeType")
-                        .IsRequired()
-                        .HasMaxLength(128)
-                        .HasColumnType("character varying(128)");
+                    b.Property<int>("Note10000")
+                        .HasColumnType("integer");
 
-                    b.Property<long>("Size")
-                        .HasColumnType("bigint");
+                    b.Property<int>("Note2000")
+                        .HasColumnType("integer");
 
-                    b.Property<string>("Type")
-                        .HasColumnType("text");
+                    b.Property<int>("Note20000")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("Note500")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("Note5000")
+                        .HasColumnType("integer");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("Type");
+                    b.HasIndex("DepositId")
+                        .IsUnique();
 
-                    b.HasIndex("DepositId", "CreatedAt");
-
-                    b.ToTable("DepositDocuments");
+                    b.ToTable("DepositCashDenominations");
                 });
 
             modelBuilder.Entity("LostAndFound.Domain.Entities.Driver", b =>
@@ -431,6 +443,27 @@ namespace LostAndFound.Infrastructure.Migrations
 
                     b.Property<string>("Details")
                         .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("FinderAddress")
+                        .HasColumnType("text");
+
+                    b.Property<string>("FinderEmail")
+                        .HasColumnType("text");
+
+                    b.Property<string>("FinderIdNumber")
+                        .HasColumnType("text");
+
+                    b.Property<string>("FinderName")
+                        .HasColumnType("text");
+
+                    b.Property<string>("FinderPhone")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime?>("FoundAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("FoundLocation")
                         .HasColumnType("text");
 
                     b.Property<string>("OtherCategoryText")
@@ -635,52 +668,6 @@ namespace LostAndFound.Infrastructure.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("RoleAuditLogs");
-                });
-
-            modelBuilder.Entity("LostAndFound.Domain.Entities.RolePermission", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<bool>("Destroy")
-                        .HasColumnType("boolean");
-
-                    b.Property<bool>("Dispose")
-                        .HasColumnType("boolean");
-
-                    b.Property<bool>("HandoverOffice")
-                        .HasColumnType("boolean");
-
-                    b.Property<bool>("HandoverOwner")
-                        .HasColumnType("boolean");
-
-                    b.Property<bool>("ReceiveStorage")
-                        .HasColumnType("boolean");
-
-                    b.Property<string>("RoleName")
-                        .IsRequired()
-                        .HasMaxLength(128)
-                        .HasColumnType("character varying(128)");
-
-                    b.Property<bool>("Sell")
-                        .HasColumnType("boolean");
-
-                    b.Property<bool>("TransferStorage")
-                        .HasColumnType("boolean");
-
-                    b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("RoleName")
-                        .IsUnique();
-
-                    b.ToTable("RolePermissions");
                 });
 
             modelBuilder.Entity("LostAndFound.Domain.Entities.StorageLocation", b =>
@@ -960,11 +947,11 @@ namespace LostAndFound.Infrastructure.Migrations
                     b.Navigation("StorageLocation");
                 });
 
-            modelBuilder.Entity("LostAndFound.Domain.Entities.DepositDocument", b =>
+            modelBuilder.Entity("LostAndFound.Domain.Entities.DepositCashDenomination", b =>
                 {
                     b.HasOne("LostAndFound.Domain.Entities.Deposit", "Deposit")
-                        .WithMany()
-                        .HasForeignKey("DepositId")
+                        .WithOne("Cash")
+                        .HasForeignKey("LostAndFound.Domain.Entities.DepositCashDenomination", "DepositId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
@@ -1106,6 +1093,8 @@ namespace LostAndFound.Infrastructure.Migrations
 
             modelBuilder.Entity("LostAndFound.Domain.Entities.Deposit", b =>
                 {
+                    b.Navigation("Cash");
+
                     b.Navigation("Items");
                 });
 

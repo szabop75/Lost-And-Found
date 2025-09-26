@@ -1,8 +1,12 @@
 using LostAndFound.Domain.Entities;
+using LostAndFound.Api.Services;
 using LostAndFound.Infrastructure.Data;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using QuestPDF.Drawing.Exceptions;
+using System.Security.Claims;
+using System.Net.Mime;
 
 namespace LostAndFound.Api.Controllers;
 
@@ -17,6 +21,50 @@ public class DepositsController : ControllerBase
         _db = db;
     }
 
+    // List stored documents for a deposit
+    [HttpGet("{id}/documents")]
+    public async Task<ActionResult<List<DepositDocumentResponse>>> ListDocuments(Guid id)
+    {
+        var exists = await _db.Deposits.AnyAsync(d => d.Id == id);
+        if (!exists) return NotFound();
+        var docs = await _db.DepositDocuments
+            .Where(d => d.DepositId == id)
+            .OrderByDescending(d => d.CreatedAt)
+            .Select(d => new DepositDocumentResponse(d.Id, d.FileName, d.MimeType, d.Size, d.Type, d.CreatedAt))
+            .ToListAsync();
+        return Ok(docs);
+    }
+
+    // Return latest stored document inline
+    [HttpGet("{id}/documents/latest")]
+    public async Task<IActionResult> GetLatestDocument(Guid id, [FromQuery] bool download = false)
+    {
+        var doc = await _db.DepositDocuments
+            .Where(d => d.DepositId == id)
+            .OrderByDescending(d => d.CreatedAt)
+            .FirstOrDefaultAsync();
+        if (doc == null) return NotFound();
+
+        var dispType = download ? "attachment" : "inline";
+        var disposition = $"{dispType}; filename=\"{doc.FileName}\"; filename*=UTF-8''{Uri.EscapeDataString(doc.FileName)}";
+        Response.Headers["Content-Disposition"] = disposition;
+        Response.Headers["Content-Length"] = doc.Size.ToString();
+        return File(doc.Bytes, doc.MimeType);
+    }
+
+    // Return specific document by id
+    [HttpGet("documents/{docId}")]
+    public async Task<IActionResult> GetDocument(Guid docId, [FromQuery] bool download = false)
+    {
+        var doc = await _db.DepositDocuments.FirstOrDefaultAsync(d => d.Id == docId);
+        if (doc == null) return NotFound();
+        var dispType = download ? "attachment" : "inline";
+        var disposition = $"{dispType}; filename=\"{doc.FileName}\"; filename*=UTF-8''{Uri.EscapeDataString(doc.FileName)}";
+        Response.Headers["Content-Disposition"] = disposition;
+        Response.Headers["Content-Length"] = doc.Size.ToString();
+        return File(doc.Bytes, doc.MimeType);
+    }
+
     public record CreateDepositItemRequest(
         string Category,
         string? OtherCategoryText,
@@ -27,20 +75,6 @@ public class DepositsController : ControllerBase
     public record CreateItemCashEntryRequest(Guid CurrencyDenominationId, int Count);
     public record CreateItemCashRequest(Guid CurrencyId, List<CreateItemCashEntryRequest> Entries);
 
-    public record CreateDepositCashRequest(
-        int Note20000,
-        int Note10000,
-        int Note5000,
-        int Note2000,
-        int Note1000,
-        int Note500,
-        int Coin200,
-        int Coin100,
-        int Coin50,
-        int Coin20,
-        int Coin10,
-        int Coin5
-    );
 
     public record CreateDepositRequest(
         string? FinderName,
@@ -52,20 +86,27 @@ public class DepositsController : ControllerBase
         DateTime? FoundAt,
         string? LicensePlate,
         Guid? BusLineId,
-        List<CreateDepositItemRequest> Items,
-        CreateDepositCashRequest? Cash
+        Guid? DriverId,
+        Guid? StorageLocationId,
+        List<CreateDepositItemRequest> Items
     );
 
     public record DepositItemResponse(Guid Id, int SubIndex, string Category, string? OtherCategoryText, string Details);
     public record DepositResponse(Guid Id, int Year, int Serial, string DepositNumber, DateTime CreatedAt, List<DepositItemResponse> Items);
+    public record DepositDocumentResponse(Guid Id, string FileName, string MimeType, long Size, string? Type, DateTime CreatedAt);
 
     [HttpPost]
-    public async Task<ActionResult<DepositResponse>> Create([FromBody] CreateDepositRequest req)
+    public async Task<ActionResult<DepositResponse>> Create([FromBody] CreateDepositRequest req, [FromServices] PdfService pdf)
     {
         if (req.Items == null || req.Items.Count == 0) return BadRequest("No items provided");
 
         var nowLocal = DateTime.Now; // yearly series based on local year
         var year = nowLocal.Year;
+
+        // Resolve current authenticated user's ID (prefer NameIdentifier/sub over Name)
+        var userId = User?.FindFirst(ClaimTypes.NameIdentifier)?.Value
+                     ?? User?.FindFirst("sub")?.Value
+                     ?? User?.Identity?.Name;
 
         for (var attempt = 0; attempt < 3; attempt++)
         {
@@ -79,34 +120,21 @@ public class DepositsController : ControllerBase
                 Serial = serial,
                 DepositNumber = depositNumber,
                 CreatedAt = DateTime.UtcNow,
-                CustodianUserId = User?.Identity?.Name,
+                CustodianUserId = userId,
                 FinderName = req.FinderName,
                 FinderAddress = req.FinderAddress,
                 FinderEmail = req.FinderEmail,
                 FinderPhone = req.FinderPhone,
                 FinderIdNumber = req.FinderIdNumber,
+                FoundLocation = req.FoundLocation,
+                FoundAt = req.FoundAt,
                 LicensePlate = string.IsNullOrWhiteSpace(req.LicensePlate) ? null : req.LicensePlate!.Trim(),
                 BusLineId = req.BusLineId,
+                DriverId = req.DriverId,
+                StorageLocationId = req.StorageLocationId,
             };
 
-            if (req.Cash is not null)
-            {
-                deposit.Cash = new DepositCashDenomination
-                {
-                    Note20000 = Math.Max(0, req.Cash.Note20000),
-                    Note10000 = Math.Max(0, req.Cash.Note10000),
-                    Note5000 = Math.Max(0, req.Cash.Note5000),
-                    Note2000 = Math.Max(0, req.Cash.Note2000),
-                    Note1000 = Math.Max(0, req.Cash.Note1000),
-                    Note500 = Math.Max(0, req.Cash.Note500),
-                    Coin200 = Math.Max(0, req.Cash.Coin200),
-                    Coin100 = Math.Max(0, req.Cash.Coin100),
-                    Coin50 = Math.Max(0, req.Cash.Coin50),
-                    Coin20 = Math.Max(0, req.Cash.Coin20),
-                    Coin10 = Math.Max(0, req.Cash.Coin10),
-                    Coin5 = Math.Max(0, req.Cash.Coin5),
-                };
-            }
+            // Deposit-level cash removed; cash is only handled at item level
 
             var items = new List<FoundItem>(req.Items.Count);
             for (int i = 0; i < req.Items.Count; i++)
@@ -117,10 +145,9 @@ public class DepositsController : ControllerBase
                     Category = it.Category,
                     OtherCategoryText = it.OtherCategoryText,
                     Details = it.Details,
-                    FoundLocation = req.FoundLocation,
-                    FoundAt = req.FoundAt,
-                    Status = ItemStatus.Received,
-                    CurrentCustodianUserId = User?.Identity?.Name,
+                    Status = ItemStatus.InStorage,
+                    StorageLocationId = req.StorageLocationId,
+                    CurrentCustodianUserId = userId,
                     Deposit = deposit,
                     DepositSubIndex = i + 1
                 };
@@ -156,7 +183,7 @@ public class DepositsController : ControllerBase
                 {
                     FoundItem = entity,
                     ActionType = "Receive",
-                    ActorUserId = User?.Identity?.Name ?? "system",
+                    ActorUserId = userId ?? "system",
                     Notes = $"Deposited via {depositNumber}"
                 });
             }
@@ -167,6 +194,33 @@ public class DepositsController : ControllerBase
             try
             {
                 await _db.SaveChangesAsync();
+
+                // Generate and persist deposit PDF immediately after creation
+                try
+                {
+                    var pdfBytes = await pdf.GenerateDeposit(deposit.Id);
+                    if (pdfBytes != null && pdfBytes.Length > 0)
+                    {
+                        var fileName = $"{deposit.DepositNumber}_{DateTime.Now:yyyyMMdd}.pdf";
+                        var doc = new DepositDocument
+                        {
+                            Id = Guid.NewGuid(),
+                            DepositId = deposit.Id,
+                            FileName = fileName,
+                            MimeType = MediaTypeNames.Application.Pdf,
+                            Size = pdfBytes.LongLength,
+                            Type = "DepositReport",
+                            Bytes = pdfBytes,
+                            CreatedAt = DateTime.UtcNow
+                        };
+                        _db.DepositDocuments.Add(doc);
+                        await _db.SaveChangesAsync();
+                    }
+                }
+                catch
+                {
+                    // Swallow PDF errors to not block deposit creation
+                }
 
                 var response = new DepositResponse(
                     deposit.Id,
@@ -201,5 +255,52 @@ public class DepositsController : ControllerBase
             .Select(fi => new DepositItemResponse(fi.Id, fi.DepositSubIndex ?? 0, fi.Category, fi.OtherCategoryText, fi.Details))
             .ToList();
         return Ok(new DepositResponse(dep.Id, dep.Year, dep.Serial, dep.DepositNumber, dep.CreatedAt, items));
+    }
+
+    [HttpGet("{id}/print")]
+    public async Task<IActionResult> Print(Guid id, [FromServices] PdfService pdf, [FromServices] ILogger<DepositsController> logger)
+        => await PrintInternal(id, null, pdf, logger);
+
+    // New route where filename is part of URL, so browsers will use it when saving
+    [HttpGet("{id}/print/{fileName}.pdf")]
+    public async Task<IActionResult> PrintWithName(Guid id, string fileName, [FromServices] PdfService pdf, [FromServices] ILogger<DepositsController> logger)
+        => await PrintInternal(id, fileName, pdf, logger);
+
+    private async Task<IActionResult> PrintInternal(Guid id, string? fileNameOverride, PdfService pdf, ILogger<DepositsController> logger)
+    {
+        try
+        {
+            // Fetch deposit number for filename formatting
+            var dep = await _db.Deposits.AsNoTracking().FirstOrDefaultAsync(d => d.Id == id);
+            if (dep == null) return NotFound();
+
+            var bytes = await pdf.GenerateDeposit(id);
+            if (bytes == null) return NotFound();
+
+            // Filename format: "<Leadási szám>_yyyyMMdd.pdf"
+            var computed = $"{dep.DepositNumber}_{DateTime.Now:yyyyMMdd}.pdf";
+            var fileName = string.IsNullOrWhiteSpace(fileNameOverride) ? computed : (fileNameOverride.EndsWith(".pdf", StringComparison.OrdinalIgnoreCase) ? fileNameOverride : fileNameOverride + ".pdf");
+
+            // Prefer inline display with proper filename hints (also RFC 5987 for UTF-8)
+            var disposition = $"inline; filename=\"{fileName}\"; filename*=UTF-8''{Uri.EscapeDataString(fileName)}";
+            Response.Headers["Content-Disposition"] = disposition;
+            Response.Headers["Content-Length"] = bytes.Length.ToString();
+            return File(bytes, "application/pdf");
+        }
+        catch (DocumentLayoutException dlex)
+        {
+            logger.LogError(dlex, "PDF layout issue while generating deposit PDF for {DepositId}", id);
+            return UnprocessableEntity(new ProblemDetails
+            {
+                Title = "PDF layout issue",
+                Detail = dlex.Message,
+                Status = StatusCodes.Status422UnprocessableEntity
+            });
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Failed to generate deposit PDF for {DepositId}", id);
+            return Problem(title: "PDF generation failed", detail: ex.Message, statusCode: 500);
+        }
     }
 }

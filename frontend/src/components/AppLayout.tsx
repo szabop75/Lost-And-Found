@@ -1,6 +1,6 @@
 import React from 'react';
 import { AppBar, Box, Button, Container, Menu, MenuItem, Toolbar, Typography } from '@mui/material';
-import { Link as RouterLink, Outlet, useNavigate } from 'react-router-dom';
+import { Link as RouterLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import api from '../api/client';
 
@@ -8,6 +8,8 @@ export default function AppLayout() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const year = new Date().getFullYear();
+  const location = useLocation();
+  const isItemsRoute = location.pathname === '/';
 
   // Determine role from JWT
   const token = typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null;
@@ -132,6 +134,9 @@ export default function AppLayout() {
                 <MenuItem component={RouterLink} to="/admin/users" onClick={closeAdmin} sx={{ fontFamily: 'Montserrat, Roboto, Arial, sans-serif', fontWeight: 700, '&:hover': { color: (t) => t.palette.primary.light, bgcolor: 'transparent' } }}>
                   {t('nav.users')}
                 </MenuItem>
+                <MenuItem component={RouterLink} to="/admin/roles" onClick={closeAdmin} sx={{ fontFamily: 'Montserrat, Roboto, Arial, sans-serif', fontWeight: 700, '&:hover': { color: (t) => t.palette.primary.light, bgcolor: 'transparent' } }}>
+                  Szerepkörök
+                </MenuItem>
                 <MenuItem component={RouterLink} to="/admin/currencies" onClick={closeAdmin} sx={{ fontFamily: 'Montserrat, Roboto, Arial, sans-serif', fontWeight: 700, '&:hover': { color: (t) => t.palette.primary.light, bgcolor: 'transparent' } }}>
                   {t('nav.currencies')}
                 </MenuItem>
@@ -168,7 +173,7 @@ export default function AppLayout() {
       </AppBar>
       {/* Spacer to offset the fixed AppBar height */}
       <Toolbar />
-      <Container sx={{ flexGrow: 1, py: 3 }}>
+      <Container maxWidth={isItemsRoute ? false : undefined} sx={{ flexGrow: 1, py: isItemsRoute ? 1.5 : 3, px: isItemsRoute ? 1.5 : 3 }}>
         <Outlet />
       </Container>
       <Box component="footer" sx={{ textAlign: 'center', py: 2, borderTop: '1px solid', borderColor: 'divider', bgcolor: (t) => t.palette.grey[100] }}>

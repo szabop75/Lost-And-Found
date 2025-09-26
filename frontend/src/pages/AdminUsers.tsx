@@ -29,7 +29,7 @@ export type UserDto = {
   email: string;
   fullName?: string | null;
   phoneNumber?: string | null;
-  role: 'Admin' | 'User' | string;
+  role: string;
 };
 
 async function fetchUsers(): Promise<UserDto[]> {
@@ -40,6 +40,8 @@ async function fetchUsers(): Promise<UserDto[]> {
 export default function AdminUsers() {
   const qc = useQueryClient();
   const { data, isLoading, isError } = useQuery({ queryKey: ['admin-users'], queryFn: fetchUsers });
+  // dynamic roles
+  const rolesQuery = useQuery<{ name: string }[]>({ queryKey: ['admin-roles'], queryFn: async () => (await api.get<{ name: string }[]>('/api/admin/roles')).data });
 
   // Create dialog state
   const [openCreate, setOpenCreate] = useState(false);
@@ -47,23 +49,25 @@ export default function AdminUsers() {
   const [cPassword, setCPassword] = useState('');
   const [cFullName, setCFullName] = useState('');
   const [cPhone, setCPhone] = useState('');
-  const [cRole, setCRole] = useState<'Admin' | 'User'>('User');
+  const [cRole, setCRole] = useState<string>('');
   const [createError, setCreateError] = useState<string | null>(null);
 
   const createMut = useMutation({
     mutationFn: async () => {
       setCreateError(null);
+      // if no role selected but roles exist, default to the first
+      const roleToUse = cRole || (rolesQuery.data && rolesQuery.data.length > 0 ? rolesQuery.data[0].name : '');
       await api.post('/api/admin/users', {
         email: cEmail,
         password: cPassword,
         fullName: cFullName || null,
         phoneNumber: cPhone || null,
-        role: cRole,
+        role: roleToUse,
       });
     },
     onSuccess: async () => {
       setOpenCreate(false);
-      setCEmail(''); setCPassword(''); setCFullName(''); setCPhone(''); setCRole('User');
+      setCEmail(''); setCPassword(''); setCFullName(''); setCPhone(''); setCRole('');
       await qc.invalidateQueries({ queryKey: ['admin-users'] });
     },
     onError: (err: any) => setCreateError(err?.response?.data ?? 'Létrehozás sikertelen'),
@@ -74,14 +78,14 @@ export default function AdminUsers() {
   const [eId, setEId] = useState<string | null>(null);
   const [eFullName, setEFullName] = useState('');
   const [ePhone, setEPhone] = useState('');
-  const [eRole, setERole] = useState<'Admin' | 'User'>('User');
+  const [eRole, setERole] = useState<string>('');
   const [ePassword, setEPassword] = useState('');
 
   const startEdit = (u: UserDto) => {
     setEId(u.id);
     setEFullName(u.fullName || '');
     setEPhone(u.phoneNumber || '');
-    setERole((u.role === 'Admin' ? 'Admin' : 'User'));
+    setERole(u.role || '');
     setEPassword('');
     setOpenEdit(true);
   };
@@ -89,10 +93,11 @@ export default function AdminUsers() {
   const saveEditMut = useMutation({
     mutationFn: async () => {
       if (!eId) return;
+      const roleToUse = eRole || (rolesQuery.data && rolesQuery.data.length > 0 ? rolesQuery.data[0].name : '');
       await api.put(`/api/admin/users/${eId}`, {
         fullName: eFullName || null,
         phoneNumber: ePhone || null,
-        role: eRole,
+        role: roleToUse,
         password: ePassword || null,
       });
     },
@@ -163,16 +168,17 @@ export default function AdminUsers() {
             <TextField label="Jelszó" type="password" value={cPassword} onChange={(e) => setCPassword(e.target.value)} fullWidth />
             <TextField label="Név" value={cFullName} onChange={(e) => setCFullName(e.target.value)} fullWidth />
             <TextField label="Telefon" value={cPhone} onChange={(e) => setCPhone(e.target.value)} fullWidth />
-            <TextField select label="Szerepkör" value={cRole} onChange={(e) => setCRole(e.target.value as any)}>
-              <MenuItem value="User">User</MenuItem>
-              <MenuItem value="Admin">Admin</MenuItem>
+            <TextField select label="Szerepkör" value={cRole} onChange={(e) => setCRole(e.target.value as string)}>
+              {(rolesQuery.data ?? []).map(r => (
+                <MenuItem key={r.name} value={r.name}>{r.name}</MenuItem>
+              ))}
             </TextField>
             {createError && <Typography color="error" variant="body2">{createError}</Typography>}
           </Box>
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setOpenCreate(false)}>Mégse</Button>
-          <Button variant="contained" onClick={() => createMut.mutate()} disabled={!cEmail || !cPassword}>Mentés</Button>
+          <Button variant="contained" onClick={() => createMut.mutate()} disabled={!cEmail || !cPassword || (rolesQuery.data && rolesQuery.data.length === 0)}>Mentés</Button>
         </DialogActions>
       </Dialog>
 
@@ -183,9 +189,10 @@ export default function AdminUsers() {
           <Box mt={1} display="flex" flexDirection="column" gap={2}>
             <TextField label="Név" value={eFullName} onChange={(e) => setEFullName(e.target.value)} fullWidth />
             <TextField label="Telefon" value={ePhone} onChange={(e) => setEPhone(e.target.value)} fullWidth />
-            <TextField select label="Szerepkör" value={eRole} onChange={(e) => setERole(e.target.value as any)}>
-              <MenuItem value="User">User</MenuItem>
-              <MenuItem value="Admin">Admin</MenuItem>
+            <TextField select label="Szerepkör" value={eRole} onChange={(e) => setERole(e.target.value as string)}>
+              {(rolesQuery.data ?? []).map(r => (
+                <MenuItem key={r.name} value={r.name}>{r.name}</MenuItem>
+              ))}
             </TextField>
             <TextField label="Új jelszó (opcionális)" type="password" value={ePassword} onChange={(e) => setEPassword(e.target.value)} fullWidth />
           </Box>

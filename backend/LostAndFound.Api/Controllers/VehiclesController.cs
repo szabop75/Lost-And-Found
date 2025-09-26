@@ -11,7 +11,7 @@ namespace LostAndFound.Api.Controllers;
 
 [ApiController]
 [Route("api/vehicles")]
-[Authorize(Roles = "Admin")] // csak admin kezelje a járműveket
+[Authorize] // authenticated users can read; admin required for mutations
 public class VehiclesController : ControllerBase
 {
     private readonly ApplicationDbContext _db;
@@ -31,6 +31,7 @@ public class VehiclesController : ControllerBase
     }
 
     [HttpPost]
+    [Authorize(Roles = "Admin")]
     public async Task<ActionResult<Vehicle>> Create([FromBody] Vehicle req)
     {
         if (string.IsNullOrWhiteSpace(req.LicensePlate)) return BadRequest("LicensePlate required");
@@ -41,6 +42,7 @@ public class VehiclesController : ControllerBase
     }
 
     [HttpPut("{id}")]
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> Update(Guid id, [FromBody] Vehicle req)
     {
         var entity = await _db.Vehicles.FindAsync(id);
@@ -53,6 +55,7 @@ public class VehiclesController : ControllerBase
     }
 
     [HttpDelete("{id}")]
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> Delete(Guid id)
     {
         var entity = await _db.Vehicles.FindAsync(id);

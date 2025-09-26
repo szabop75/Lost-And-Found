@@ -11,6 +11,7 @@ using Microsoft.IdentityModel.Tokens;
 using Serilog;
 using Npgsql;
 using Microsoft.OpenApi.Models;
+using Microsoft.AspNetCore.HttpOverrides;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -140,6 +141,17 @@ builder.Services.AddSwaggerGen(options =>
 // App services
 builder.Services.AddScoped<IJwtTokenService, JwtTokenService>();
 builder.Services.AddScoped<PdfService>();
+builder.Services.AddHostedService<AutoDisposalService>();
+builder.Services.AddHttpContextAccessor();
+
+// Reverse proxy (Nginx Proxy Manager) forwarded headers support
+builder.Services.Configure<ForwardedHeadersOptions>(options =>
+{
+    options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+    // Trust all proxies/networks by clearing defaults. In hardened setups, set KnownProxies/KnownNetworks explicitly.
+    options.KnownNetworks.Clear();
+    options.KnownProxies.Clear();
+});
 
 var app = builder.Build();
 
@@ -151,7 +163,9 @@ if (app.Environment.IsDevelopment())
 }
 else
 {
-    // In non-development, enforce HTTPS
+    // Respect X-Forwarded-* from reverse proxy before deciding on redirects
+    app.UseForwardedHeaders();
+    // In non-development, enforce HTTPS (will use X-Forwarded-Proto when behind proxy)
     app.UseHttpsRedirection();
 }
 

@@ -19,7 +19,6 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
     public DbSet<RoleAuditLog> RoleAuditLogs => Set<RoleAuditLog>();
     public DbSet<ItemAuditLog> ItemAuditLogs => Set<ItemAuditLog>();
     public DbSet<Deposit> Deposits => Set<Deposit>();
-    public DbSet<DepositCashDenomination> DepositCashDenominations => Set<DepositCashDenomination>();
     public DbSet<Currency> Currencies => Set<Currency>();
     public DbSet<CurrencyDenomination> CurrencyDenominations => Set<CurrencyDenomination>();
     public DbSet<FoundItemCash> FoundItemCashes => Set<FoundItemCash>();
@@ -27,6 +26,8 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
     public DbSet<BusLine> BusLines => Set<BusLine>();
     public DbSet<Vehicle> Vehicles => Set<Vehicle>();
     public DbSet<Driver> Drivers => Set<Driver>();
+    public DbSet<RolePermission> RolePermissions => Set<RolePermission>();
+    public DbSet<DepositDocument> DepositDocuments => Set<DepositDocument>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -51,16 +52,8 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
         {
             e.HasIndex(d => new { d.Year, d.Serial }).IsUnique();
             e.Property(d => d.DepositNumber).IsRequired().HasMaxLength(16);
-            e.HasOne(d => d.Cash)
-                .WithOne(c => c.Deposit)
-                .HasForeignKey<DepositCashDenomination>(c => c.DepositId)
-                .OnDelete(DeleteBehavior.Cascade);
         });
 
-        builder.Entity<DepositCashDenomination>(e =>
-        {
-            // optional additional config
-        });
 
         builder.Entity<Currency>(e =>
         {
@@ -140,6 +133,16 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
                 .WithMany()
                 .HasForeignKey(d => d.BusLineId)
                 .OnDelete(DeleteBehavior.SetNull);
+
+            e.HasOne(d => d.Driver)
+                .WithMany()
+                .HasForeignKey(d => d.DriverId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            e.HasOne(d => d.StorageLocation)
+                .WithMany()
+                .HasForeignKey(d => d.StorageLocationId)
+                .OnDelete(DeleteBehavior.SetNull);
         });
 
         builder.Entity<BusLine>(e =>
@@ -160,6 +163,25 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
             e.Property(d => d.Name).IsRequired().HasMaxLength(200);
             e.HasIndex(d => d.Code).IsUnique();
             e.HasIndex(d => d.Name);
+        });
+
+        builder.Entity<RolePermission>(e =>
+        {
+            e.HasIndex(rp => rp.RoleName).IsUnique();
+            e.Property(rp => rp.RoleName).IsRequired().HasMaxLength(128);
+        });
+
+        builder.Entity<DepositDocument>(e =>
+        {
+            e.Property(d => d.FileName).IsRequired().HasMaxLength(256);
+            e.Property(d => d.MimeType).IsRequired().HasMaxLength(128);
+            e.Property(d => d.Size).IsRequired();
+            e.HasOne(d => d.Deposit)
+                .WithMany()
+                .HasForeignKey(d => d.DepositId)
+                .OnDelete(DeleteBehavior.Cascade);
+            e.HasIndex(d => new { d.DepositId, d.CreatedAt });
+            e.HasIndex(d => d.Type);
         });
     }
 }

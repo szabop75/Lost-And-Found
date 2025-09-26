@@ -6,5 +6,9 @@ public enum ItemStatus
     InStorage = 1,
     Transferred = 2,
     Claimed = 3,
-    Disposed = 4
+    Disposed = 4,
+    ReadyToDispose = 5,
+    Destroyed = 6,
+    InTransit = 7,
+    Sold = 8
 }

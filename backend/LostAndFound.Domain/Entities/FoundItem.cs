@@ -10,17 +10,7 @@ public class FoundItem : BaseEntity
 
     public string Details { get; set; } = default!; // sérülések, tulajdonságok
 
-    public string? FoundLocation { get; set; }
-    public DateTime? FoundAt { get; set; }
-
-    // Mezők a megtaláló (nem felhasználó) rögzítéséhez
-    public string? FinderName { get; set; }
-    public string? FinderAddress { get; set; }
-    public string? FinderEmail { get; set; }
-    public string? FinderPhone { get; set; }
-    public string? FinderIdNumber { get; set; }
-
-    public ItemStatus Status { get; set; } = ItemStatus.Received;
+    public ItemStatus Status { get; set; } = ItemStatus.InStorage;
 
     // Aktuális birtokos (rendszerfelhasználó) – személyhez kötött átadás
     public string? CurrentCustodianUserId { get; set; }

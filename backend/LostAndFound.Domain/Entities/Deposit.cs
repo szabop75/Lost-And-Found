@@ -19,12 +19,22 @@ public class Deposit : BaseEntity
     public string? FinderPhone { get; set; }
     public string? FinderIdNumber { get; set; }
 
+    // Discovery metadata (single source of truth)
+    public string? FoundLocation { get; set; }
+    public DateTime? FoundAt { get; set; }
+
     // Vehicle and line context
     public string? LicensePlate { get; set; }
     public Guid? BusLineId { get; set; }
     public BusLine? BusLine { get; set; }
 
-    public DepositCashDenomination? Cash { get; set; }
+    // Optional driver (who deposited or related to the deposit)
+    public Guid? DriverId { get; set; }
+    public Driver? Driver { get; set; }
+
+    // Optional storage location where the deposit is stored
+    public Guid? StorageLocationId { get; set; }
+    public StorageLocation? StorageLocation { get; set; }
 
     public List<FoundItem> Items { get; set; } = new();
 }

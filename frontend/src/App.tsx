@@ -13,9 +13,7 @@ import AdminCurrencies from './pages/AdminCurrencies.tsx'
 import Lines from './pages/Lines.tsx'
 import Vehicles from './pages/Vehicles.tsx'
 import Drivers from './pages/Drivers.tsx'
-import OwnerHandoverPrint from './pages/prints/OwnerHandoverPrint.tsx'
-import OfficeHandoverPrint from './pages/prints/OfficeHandoverPrint.tsx'
-import DisposalPrint from './pages/prints/DisposalPrint.tsx'
+import AdminRolesPage from './pages/admin/Roles.tsx'
 
 export default function App() {
   return (
@@ -34,11 +32,10 @@ export default function App() {
             <Route path="admin/audit" element={<AdminAudit />} />
             <Route path="admin/users" element={<AdminUsers />} />
             <Route path="admin/storage-locations" element={<StorageLocations />} />
+            <Route path="admin/roles" element={<AdminRolesPage />} />
           </Route>
           <Route path="deposits/new" element={<NewDeposit />} />
-          <Route path="prints/owner-handover/:id" element={<OwnerHandoverPrint />} />
-          <Route path="prints/office-handover/:id" element={<OfficeHandoverPrint />} />
-          <Route path="prints/disposal/:id" element={<DisposalPrint />} />
+          {/* All prints are generated on backend; no client print routes */}
           <Route path="*" element={<Navigate to="/" replace />} />
         </Route>
       </Route>
