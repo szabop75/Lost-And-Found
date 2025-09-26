@@ -36,7 +36,5 @@ public class Deposit : BaseEntity
     public Guid? StorageLocationId { get; set; }
     public StorageLocation? StorageLocation { get; set; }
 
-    public DepositCashDenomination? Cash { get; set; }
-
     public List<FoundItem> Items { get; set; } = new();
 }

@@ -11,7 +11,7 @@ namespace LostAndFound.Api.Controllers;
 
 [ApiController]
 [Route("api/lines")]
-[Authorize(Roles = "Admin")] // csak admin kezelje a vonalakat
+[Authorize] // authenticated users can read; admin required for mutations
 public class BusLinesController : ControllerBase
 {
     private readonly ApplicationDbContext _db;
@@ -32,6 +32,7 @@ public class BusLinesController : ControllerBase
     }
 
     [HttpPost]
+    [Authorize(Roles = "Admin")]
     public async Task<ActionResult<BusLine>> Create([FromBody] BusLine req)
     {
         if (string.IsNullOrWhiteSpace(req.Name)) return BadRequest("Name required");
@@ -42,6 +43,7 @@ public class BusLinesController : ControllerBase
     }
 
     [HttpPut("{id}")]
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> Update(Guid id, [FromBody] BusLine req)
     {
         var entity = await _db.BusLines.FindAsync(id);
@@ -55,6 +57,7 @@ public class BusLinesController : ControllerBase
     }
 
     [HttpDelete("{id}")]
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> Delete(Guid id)
     {
         var entity = await _db.BusLines.FindAsync(id);

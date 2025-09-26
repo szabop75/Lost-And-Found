@@ -10,9 +10,7 @@ public class FoundItem : BaseEntity
 
     public string Details { get; set; } = default!; // sérülések, tulajdonságok
 
-    // Leadás metaadatok kizárólag a Deposit-ban tárolódnak (FoundLocation, FoundAt, Finder*, LicensePlate)
-
-    public ItemStatus Status { get; set; } = ItemStatus.Received;
+    public ItemStatus Status { get; set; } = ItemStatus.InStorage;
 
     // Aktuális birtokos (rendszerfelhasználó) – személyhez kötött átadás
     public string? CurrentCustodianUserId { get; set; }

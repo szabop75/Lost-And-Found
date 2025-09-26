@@ -11,7 +11,7 @@ namespace LostAndFound.Api.Controllers;
 
 [ApiController]
 [Route("api/drivers")]
-[Authorize(Roles = "Admin")] // csak admin kezelje a járművezetőket
+[Authorize] // authenticated users can read; admin required for mutations
 public class DriversController : ControllerBase
 {
     private readonly ApplicationDbContext _db;
@@ -31,6 +31,7 @@ public class DriversController : ControllerBase
     }
 
     [HttpPost]
+    [Authorize(Roles = "Admin")]
     public async Task<ActionResult<Driver>> Create([FromBody] Driver req)
     {
         if (string.IsNullOrWhiteSpace(req.Code)) return BadRequest("Code required");
@@ -42,6 +43,7 @@ public class DriversController : ControllerBase
     }
 
     [HttpPut("{id}")]
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> Update(Guid id, [FromBody] Driver req)
     {
         var entity = await _db.Drivers.FindAsync(id);
@@ -56,6 +58,7 @@ public class DriversController : ControllerBase
     }
 
     [HttpDelete("{id}")]
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> Delete(Guid id)
     {
         var entity = await _db.Drivers.FindAsync(id);

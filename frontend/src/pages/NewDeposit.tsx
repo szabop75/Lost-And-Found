@@ -3,6 +3,7 @@ import { Box, Button, Container, FormControl, InputLabel, MenuItem, Paper, Selec
 import DeleteIcon from '@mui/icons-material/Delete';
 import AddIcon from '@mui/icons-material/Add';
 import { useNavigate } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query';
 import api from '../api/client';
 
 const CATEGORIES = [
@@ -27,6 +28,7 @@ type DepositItem = {
 
 export default function NewDeposit() {
   const navigate = useNavigate();
+  const qc = useQueryClient();
 
   // Leadás adatai (leadó + megtalálás helye/időpont)
   const [finderName, setFinderName] = useState('');
@@ -240,6 +242,8 @@ export default function NewDeposit() {
     }
     try {
       setSubmitting(true);
+      // Pre-open a new tab during the direct user gesture to avoid popup blockers
+      const printTab = window.open('', '_blank');
       const payload: any = {
         finderName: finderName || null,
         finderAddress: finderAddress || null,
@@ -274,6 +278,22 @@ export default function NewDeposit() {
       console.debug('Creating deposit with payload:', payload);
       const res = await api.post('/api/deposits', payload);
       const depNumber = res.data?.depositNumber as string | undefined;
+      const depId = res.data?.id as string | undefined;
+      // Ensure items list refreshes so the newly created records appear
+      try { await qc.invalidateQueries({ queryKey: ['items'] }); } catch {}
+      // Open the latest stored PDF (DB) in the pre-opened tab using authenticated blob fetch
+      if (depId && printTab) {
+        try {
+          const pdfRes = await api.get(`/api/deposits/${depId}/documents/latest`, { responseType: 'blob', params: { t: Date.now() } });
+          const blobUrl = URL.createObjectURL(new Blob([pdfRes.data], { type: 'application/pdf' }));
+          printTab.location.href = blobUrl;
+          setTimeout(() => URL.revokeObjectURL(blobUrl), 60_000);
+        } catch {
+          try { printTab.close(); } catch {}
+        }
+      } else if (printTab) {
+        try { printTab.close(); } catch {}
+      }
       navigate('/');
       if (depNumber) {
         // Optionally, could route to a deposit summary page later

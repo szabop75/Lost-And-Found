@@ -40,6 +40,7 @@ public class ItemListResponse
     public string? BusLineName { get; set; }
     public string? DepositNumber { get; set; }
     public int? DepositSubIndex { get; set; }
+    public string? StorageLocationName { get; set; }
 }
 
 public class ItemListResult
