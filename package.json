@@ -3,11 +3,12 @@
   "private": true,
   "scripts": {
     "predev": "node scripts/kill-port.js",
-    "dev": "concurrently -k -n API,WEB -c blue,green \"dotnet watch --project backend/LostAndFound.Api\" \"npm run dev --prefix frontend\"",
-    "dev:api": "dotnet watch --project backend/LostAndFound.Api",
+    "dev": "concurrently -k -n API,WEB -c blue,green \"dotenv -e .env -- dotnet watch --project backend/LostAndFound.Api\" \"npm run dev --prefix frontend\"",
+    "dev:api": "dotenv -e .env -- dotnet watch --project backend/LostAndFound.Api",
     "dev:web": "npm run dev --prefix frontend"
   },
   "devDependencies": {
-    "concurrently": "^9.0.0"
+    "concurrently": "^9.0.0",
+    "dotenv-cli": "^7.4.4"
   }
 }
