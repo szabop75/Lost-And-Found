@@ -110,18 +110,7 @@ async function fetchItems(params: {
 }
 
 export default function ItemsList() {
-  // helper to open backend-generated PDFs in a new tab without popup blockers
-  const openPdfFrom = async (loader: () => Promise<Blob>) => {
-    const tab = window.open('', '_blank');
-    try {
-      const blob = await loader();
-      const url = URL.createObjectURL(blob);
-      if (tab) tab.location.href = url;
-      setTimeout(() => URL.revokeObjectURL(url), 60_000);
-    } catch (e) {
-      try { tab?.close(); } catch {}
-    }
-  };
+  
   // Map backend status codes to Hungarian labels
   const statusLabel = (s: string) => {
     switch (s) {

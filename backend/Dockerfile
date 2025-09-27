@@ -24,8 +24,7 @@ ENV ASPNETCORE_URLS=http://+:8080
 EXPOSE 8080
 COPY --from=build /app/publish .
 
-# Optionally set environment to Production in container
+# Do not hardcode environment in the image; set via runtime/container orchestrator
 ENV DOTNET_RUNNING_IN_CONTAINER=true
-ENV ASPNETCORE_ENVIRONMENT=Production
 
 ENTRYPOINT ["dotnet", "LostAndFound.Api.dll"]
