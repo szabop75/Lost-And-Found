@@ -27,6 +27,34 @@ builder.Host.UseSerilog((context, services, configuration) =>
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
 {
     var cs = builder.Configuration.GetConnectionString("DefaultConnection");
+    if (string.IsNullOrWhiteSpace(cs))
+    {
+        // Fallback: építsük fel a kapcsolatot .env komponensekből helyi fejlesztéshez
+        var host = builder.Configuration["EXTERNAL_DB_HOST"] ?? builder.Configuration["POSTGRES_HOST"];
+        var portStr = builder.Configuration["POSTGRES_PORT"] ?? "5432";
+        var isDev = builder.Environment.IsDevelopment();
+        var dbFromEnv = builder.Configuration["POSTGRES_DB"];
+        var db = !string.IsNullOrWhiteSpace(dbFromEnv)
+            ? dbFromEnv
+            : (isDev ? "lostandfound_dev" : "lostandfound");
+        var user = builder.Configuration["POSTGRES_USER"];
+        var pwd = builder.Configuration["POSTGRES_PASSWORD"];
+
+        if (!string.IsNullOrWhiteSpace(host) && !string.IsNullOrWhiteSpace(user) && !string.IsNullOrWhiteSpace(pwd))
+        {
+            if (!int.TryParse(portStr, out var port)) port = 5432;
+            var sb = new NpgsqlConnectionStringBuilder
+            {
+                Host = host,
+                Port = port,
+                Database = db,
+                Username = user,
+                Password = pwd,
+                SslMode = SslMode.Disable
+            };
+            cs = sb.ToString();
+        }
+    }
     options.UseNpgsql(cs);
 });
 
