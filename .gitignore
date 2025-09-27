@@ -14,6 +14,12 @@ pnpm-debug.log*
 # Env
 .env
 .env.*
+!.env.example
+!.env.development.example
+
+# Local docker-compose override should not be committed
+docker-compose.override.yml
+!docker-compose.override.example.yml
 
 # Editor/OS
 .DS_Store

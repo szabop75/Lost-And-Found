@@ -1,0 +1,10 @@
+# Helyi fejlesztési override példa (nem ajánlott commitolni a valós override-ot)
+# Másold ezt a fájlt docker-compose.override.yml néven a SAJÁT gépeden,
+# és így fejlesztéskor a lostandfound_dev adatbázist fogja használni.
+
+services:
+  api:
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      # Csak az adatbázis nevet írjuk felül helyi fejlesztéshez
+      ConnectionStrings__DefaultConnection: "Host=${EXTERNAL_DB_HOST};Port=${POSTGRES_PORT};Database=lostandfound_dev;Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD};SSL Mode=Disable"
